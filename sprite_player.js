@@ -46,7 +46,7 @@ function FramePlayer (selector ) {
         if(self.running)
         {
             self.pause();
-            self.play();
+            self.play(self.frameRate , self.direction);
         }
     };
 
@@ -108,7 +108,7 @@ function FramePlayer (selector ) {
         self.renderState();
     };
     self.toggle = function(){
-        (self.running ? self.pause : self.play)();
+        (self.running ? self.pause : self.play)(self.frameRate , self.direction);
     };
 
 
