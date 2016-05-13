@@ -1,7 +1,5 @@
 /**
  *
- * !!This player assumes n by n sprite images as data source. (assignment written this way)
- * the
  * @param selector  the selector of the intended vide players (allowed to be multiple)
  * @constructor
  */
@@ -14,8 +12,11 @@ function FramePlayer (selector ) {
     self.elements.html("<div class='video'></div><canvas width='"+self.frameWidth+"' height='"+self.progressBarHeight+"' class='progressbar'></canvas>");
     self.progressBarPastColor = "#999";
     self.progressBarFutureColor = "#666";
-    self.frameCount = 25; // default value
-    self.source = "http://mcp-media.s3.amazonaws.com/pvw/E05/8B4/E058B455C5B04E7B8ACE8F5176A2E8AB_pvw-M0.jpg";
+    self.sourceCount =7;
+    self.sourceId =0;
+    self.framePerSource=25;
+    self.frameCount = self.sourceCount*self.framePerSource; // default value
+    self.source_template = "http://mcp-media.s3.amazonaws.com/pvw/E05/8B4/E058B455C5B04E7B8ACE8F5176A2E8AB_pvw-M{id}.jpg";
     self.frameRate = 10; // the unit is fps
     self.clockId = -1;
     self.initialFrame = 0;
@@ -27,6 +28,12 @@ function FramePlayer (selector ) {
     self.videoElements.width(self.frameWidth);
     self.progressBarElements.width(self.frameWidth);
     self.progressBarElements.height(self.progressBarHeight);
+    self.waitingImage = false;
+    for(var i = 0 ; i < self.sourceCount ; i ++)
+    {
+        var image = new Image();
+        image.src = self.source_template.replace("{id}", i);
+    }
 
     /**
      *
@@ -53,22 +60,25 @@ function FramePlayer (selector ) {
     };
 
     self.renderState = function () {
-        dimension = Math.sqrt(self.frameCount);
-
-        self.videoElements.css("background-image", "url("+self.source+")");
-        self.videoElements.css("background-position", self.frameWidth * (self.initialFrame % dimension )+"px " + self.frameHeight * (Math.floor(self.initialFrame/dimension )) +"px" );
+        dimension = Math.sqrt(self.framePerSource);
+        var imageId =  Math.floor(self.initialFrame/self.framePerSource);
+        var imageUrl = self.source_template.replace("{id}" , imageId);
+        self.videoElements.css("background-image", "url("+imageUrl+ ")")  ;
+        self.videoElements.css("background-position", self.frameWidth * ( (self.initialFrame%self.framePerSource) % dimension )+"px "
+            + self.frameHeight * (Math.floor((self.initialFrame%self.framePerSource)/dimension )) +"px" );
         for( var i=0; i<self.progressBarElements.length; i++){
             ctx = self.progressBarElements[i].getContext('2d');
             ctx.fillStyle = self.progressBarFutureColor;
             ctx.fillRect(0,0,self.frameWidth,self.progressBarHeight);
             ctx.fillStyle = self.progressBarPastColor;
-            ctx.fillRect(0,0,   Math.floor( self.frameWidth * (self.initialFrame + 1) /self.frameCount) , self.progressBarHeight)
+            ctx.fillRect(0,0,   Math.floor( self.frameWidth * (self.initialFrame + 1) / ( self.frameCount) ), self.progressBarHeight)
         }
 
     };
 
 
     self.play = function (fps){
+        self.waitingImage = false;
         if(fps)
             self.setFrameRate(fps);
         self.direction = 1;
@@ -80,6 +90,7 @@ function FramePlayer (selector ) {
     };
 
     self.pause = function (){
+        self.waitingImage = false;
         if(self.clockId != -1)
             clearInterval(self.clockId);
         self.running = false;
@@ -100,24 +111,6 @@ function FramePlayer (selector ) {
     };
 
 
-    /**
-     * @param count integer value of frame count. Must be a perfect square of a nonzero integer.
-     */
-    self.setFrameCount = function (count){
-        if(n <= 0 || Math.sqrt(n) % 1 === 0) throw "Illegal argument. Frame count must be square of a positive integer";
-            self.frameCount =  count;
-    };
-
-
-    /**
-     * Changes the data source. Legal to use on the fly during animation.
-     * @param url the sprite url
-     */
-    self.setSprite = function(url){
-        if(!self.running)
-            self.renderState();
-        self.source = url;
-    };
 
     self.videoElements.click(function(){
         self.toggle();
