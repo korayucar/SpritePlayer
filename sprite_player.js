@@ -77,11 +77,12 @@ function FramePlayer (selector ) {
     };
 
 
-    self.play = function (fps){
+    self.play = function (fps , direction){
         self.waitingImage = false;
         if(fps)
             self.setFrameRate(fps);
-        self.direction = 1;
+        if(direction!=-1)
+            self.direction = 1;
         self.running = true;
         self.clockId = window.setInterval(function(){
             self.playSingleFrame();
@@ -99,7 +100,7 @@ function FramePlayer (selector ) {
 
     self.playBackwards = function (fps){
         self.direction = -1;
-        self.play(fps);
+        self.play(fps , self.direction);
     };
 
     self.seek = function (frame){
